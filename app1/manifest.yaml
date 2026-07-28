@@ -1,8 +1,12 @@
+# ============================================================
+# 1. DEPLOYMENT
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 
 metadata:
   name: app1
+  namespace: roboshop
   labels:
     purpose: ingress
     project: roboshop
@@ -28,52 +32,81 @@ spec:
       containers:
         - name: app1
           image: lakshmi1092/app1:v1
+          ports:
+            - containerPort: 80
+
 ---
+# ============================================================
+# 2. SERVICE
+# ============================================================
 apiVersion: v1
 kind: Service
+
 metadata:
   name: nginx
+  namespace: roboshop
   labels:
     purpose: ingress
     project: roboshop
     app: app1
+
 spec:
   selector:
     purpose: ingress
     project: roboshop
     app: app1
+
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
+
 ---
+# ============================================================
+# 3. INGRESS
+# ============================================================
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
-  purpose: ingress
-  project: roboshop
-  app: app1
+  name: app1-ingress
+  namespace: roboshop
+
+  labels:
+    purpose: ingress
+    project: roboshop
+    app: app1
+
   annotations:
+    # ALB listens on HTTPS port 443
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+
+    # ACM certificate for HTTPS
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:352742379477:certificate/bc9c2cf3-00d8-400c-af1a-7209ad14e248
+
+    # Create an internet-facing ALB
     alb.ingress.kubernetes.io/scheme: internet-facing
+
+    # Send traffic directly to Pod IPs
     alb.ingress.kubernetes.io/target-type: ip
 
 spec:
+  # AWS Load Balancer Controller will manage this Ingress
   ingressClassName: alb
 
   rules:
-    # Request for app1.nagalakshmi.site
+    # When the request is:
+    # https://app1.nagalakshmi.site
+    #
+    # Send traffic to the nginx Service
     - host: app1.nagalakshmi.site
       http:
         paths:
           - path: /
             pathType: Prefix
+
             backend:
               service:
-                name: app1
+                name: nginx
                 port:
                   number: 80
-
-  
