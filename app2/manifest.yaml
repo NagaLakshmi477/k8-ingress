@@ -89,6 +89,7 @@ metadata:
 
     # Send traffic directly to Pod IPs
     alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: lakshmi1092
 
 spec:
   # AWS Load Balancer Controller will manage this Ingress
